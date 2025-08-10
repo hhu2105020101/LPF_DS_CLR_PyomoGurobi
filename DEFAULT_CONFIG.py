@@ -1,0 +1,36 @@
+
+
+DEBUG = False
+
+CONTROL_HORIZON_LEN = 72
+STEPS_PER_HOUR = 12
+STEP_INTERVAL_IN_HOUR = 1. / STEPS_PER_HOUR
+
+REWARD_SCALING_FACTOR = 0.001
+
+DEFAULT_V_LAMBDA = 1e8
+DEFAULT_ERROR_LEVEL = 0.1
+
+V_MAX = 1.05
+V_MIN = 0.95
+
+CONTROL_HISTORY_DICT = {"load_status": [],
+                        "pv_power": [],
+                        "wt_power": [],
+                        "mt_power": [],
+                        "st_power": [],
+                        "slack_power": [],
+                        "voltages": [],
+                        "mt_remaining_fuel": [],
+                        "st_soc": []}
+
+# Local config
+# absolute path for pseudo forecasts files.
+PSEUDO_FORECASTS_DIR = '/projects/drl4dsr/xzhang2/synthetic_forecasts_oedi'
+
+#note:gua
+STEPS_LOOKAHEAD = 288
+STEPS_TOTAL = 288
+NOW_STEP = 0
+HISTORY_FILE = "load_restoration_history.pkl"
+
