@@ -110,22 +110,7 @@ def system_constraints(env, grid, model, now_window):
     model.power_balance_con = Constraint(model.T, rule=active_power_balance_rule)
 
 
-    # # 添加线路功率计算约束
-    # def line_power_calculation_rule(model, start_bus, end_bus, t):
-    #     """计算线路功率流（基于下游关系）"""
-    #     # 获取下游节点集合
-    #     downstream_buses = grid.downstream_map.get(end_bus, [])
-    #
-    #     # 计算下游总功率（包括终点节点）
-    #     total_downstream_power = model.p_inj[end_bus, t] + sum(model.p_inj[bus, t] for bus in downstream_buses)
-    #     # print(start_bus, end_bus, t)
-    #     # print(-total_downstream_power)
-    #     # 返回功率流等于下游总功率
-    #     return model.p_flow[start_bus, end_bus, t] == - total_downstream_power
-    #
-    # model.line_power_calculation_con = Constraint(model.lines, model.T, rule=line_power_calculation_rule)
-
-    # 三相扩展
+    # 三相线路功率流
     def line_power_calculation_rule(model, start_bus, end_bus, phase, t):
         """计算三相线路功率流"""
         # 获取下游节点集合
