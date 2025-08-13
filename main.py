@@ -82,8 +82,8 @@ def main():
         # 求解优化问题
         results = solve_load_restoration(env, grid, model, now_window)
         print_results(model, grid)
-        # plot_optimization_results(model, grid)
         plot_full_results(model, grid)
+        plot_line_power_flows(model, grid)
     #
     #     # 提取并应用第一个时间步的控制决策
     #     actions = get_first_step_actions(model)
@@ -398,7 +398,83 @@ def plot_full_results(model, grid):
     # 保存并显示
     plt.tight_layout()
     plt.savefig('full_optimization_results.png', dpi=300, bbox_inches='tight')
-    plt.show()
+
+
+
+def plot_line_power_flows(model, grid):
+    """绘制关键线路功率流随时间变化（改进版）"""
+    # 设置中文显示
+    plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'KaiTi']
+    plt.rcParams['axes.unicode_minus'] = False
+
+    # 准备时间轴数据（288个时间步）
+    time_steps = list(model.T)
+    hours = np.linspace(0, 24, len(time_steps))  # 假设24小时周期
+
+    # 获取所有线路信息
+    all_lines = list(grid.line_impedance.keys())
+
+    # 创建大画布
+    fig, axs = plt.subplots(len(all_lines), 1, figsize=(18, 4 * len(all_lines)), sharex=True)
+
+    # 如果只有一条线路，确保axs是列表
+    if len(all_lines) == 1:
+        axs = [axs]
+
+    # 设置颜色方案
+    phase_colors = {'A': 'red', 'B': 'green', 'C': 'blue'}
+
+    # 遍历每条线路
+    for i, (start_bus, end_bus) in enumerate(all_lines):
+        ax = axs[i]
+
+        # 计算三相功率流
+        p_flow_A = [value(model.p_flow[start_bus, end_bus, 'A', t]) for t in model.T]
+        p_flow_B = [value(model.p_flow[start_bus, end_bus, 'B', t]) for t in model.T]
+        p_flow_C = [value(model.p_flow[start_bus, end_bus, 'C', t]) for t in model.T]
+        total_flow = [p_flow_A[j] + p_flow_B[j] + p_flow_C[j] for j in range(len(p_flow_A))]
+
+        # 获取线路阻抗信息
+        impedance = grid.line_impedance.get((start_bus, end_bus), (0, 0))
+        r, x = impedance
+        impedance_text = f"R={r:.4f} Ω, X={x:.4f} Ω"
+
+        # 绘制三相功率流
+        ax.plot(hours, p_flow_A, '-', color=phase_colors['A'], label='A相', linewidth=1.5,alpha=0.7)
+        ax.plot(hours, p_flow_B, '--', color=phase_colors['B'], label='B相', linewidth=1.5,alpha=0.7)
+        ax.plot(hours, p_flow_C, '-.', color=phase_colors['C'], label='C相', linewidth=1.5,alpha=0.7)
+        # 在绘制线条后添加
+        ax.fill_between(hours, p_flow_A, 0, color=phase_colors['A'], alpha=0.15)
+        ax.fill_between(hours, p_flow_B, 0, color=phase_colors['B'], alpha=0.15)
+        ax.fill_between(hours, p_flow_C, 0, color=phase_colors['C'], alpha=0.15)
+        # 绘制总功率流（粗虚线）
+        ax.plot(hours, total_flow, 'k--', label='总功率', linewidth=2.5)
+
+        # 设置标题和网格
+        ax.set_title(f'线路 {start_bus}→{end_bus} 功率流 ({impedance_text})', fontsize=14)
+        ax.set_ylabel('功率 (kW)', fontsize=10)
+        ax.grid(True, linestyle='--', alpha=0.5)
+
+        # 添加图例
+        ax.legend(loc='upper right', fontsize=9)
+
+        # 添加零线参考
+        ax.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
+
+    # 设置公共x轴
+    axs[-1].set_xlabel('时间 (小时)', fontsize=12)
+    plt.xticks(np.arange(0, 25, 3), fontsize=10)
+
+    # 添加大标题
+    plt.suptitle('系统线路功率流分析', fontsize=18, y=0.98)
+
+    # 调整布局
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.95)  # 为suptitle留空间
+
+    # 保存并显示
+    plt.savefig('line_power_flows.png', dpi=300, bbox_inches='tight')
+
 
 
 if __name__ == "__main__":

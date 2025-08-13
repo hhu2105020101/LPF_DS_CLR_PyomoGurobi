@@ -29,30 +29,6 @@ def system_constraints(env, grid, model, now_window):
     model.q_inj = Var(model.buses, model.phases, model.T, within=Reals)  # 三相节点注入无功
 
     # # 节点注入约束
-    # def injection_rule(model, bus, t):
-    #     """计算节点净功率注入"""
-    #     net_injection = 0
-    #     # 发电机注入
-    #     if bus in model.gf:
-    #         net_injection += model.p_gf[bus, t]
-    #     # 储能注入
-    #     if bus in model.st:
-    #         net_injection += model.p_st[bus, t]
-    #     # 光伏注入
-    #     if bus in model.pv:
-    #         net_injection += model.p_pv[t]
-    #     # 风机注入
-    #     if bus in model.wt:
-    #         net_injection += model.p_wt[t]
-    #     # 负荷消耗
-    #     # 负载消耗（使用映射）
-    #     if bus in grid.load_mapping:  # 通过模型访问grid
-    #         for load_name in grid.load_mapping[bus]:
-    #             net_injection -= model.p_load[load_name, t]
-    #
-    #     return model.p_inj[bus, t] == net_injection
-    # model.injection_con = Constraint(model.buses, model.T, rule=injection_rule)
-    #
     def injection_rule(model, bus, phase, t):
         """计算节点净功率注入（三相）"""
         net_injection = 0
