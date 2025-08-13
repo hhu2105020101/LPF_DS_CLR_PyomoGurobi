@@ -11,6 +11,7 @@ import pickle
 import os
 from tabulate import tabulate
 import time
+from IEEE13bus import StaticGridData
 
 
 def print_optimization_summary(history):
@@ -58,6 +59,7 @@ def main():
 
     env = LoadRestoration13BusBaseEnv()
 
+    grid = StaticGridData()
     env.mt.remaining_fuel_in_kwh = env.mt.original_fuel_in_kwh
     env.st.current_storage = env.st.initial_storage_mean
     # 定义数据文件路径
@@ -68,54 +70,55 @@ def main():
     table_data = []
     headers = ["时间步", "总恢复负荷(kW)", "发电机出力(kW)", "储能充放电(kW)", "可再生能源(kW)"]
 
-    for now_step in range(0, STEPS_TOTAL, 1):
+    # for now_step in range(0, STEPS_TOTAL, 1):
+    for now_step in range(0, 1, 1):
         # 设置当前 MPC 窗口
         end_step = min(now_step + STEPS_LOOKAHEAD, STEPS_TOTAL)
         now_window = range(now_step, end_step)
 
         model = ConcreteModel()
         # 求解优化问题
-        results = solve_load_restoration(env, model, now_window)
-
-        # 提取并应用第一个时间步的控制决策
-        actions = get_first_step_actions(model)
-        history.append(actions)
-        print(actions)
-
-        # 应用控制动作到环境，获取真实的mt出力和燃料剩余
-        apply_actions_to_environment(env, actions)
-
-        # 更新状态变量SOC
-        update_state_variables(env, actions)
-
-        # 从actions中提取关键数据
-        total_load = sum(load['p'] for load in actions['loads'].values())
-        gen_power = sum(gen['p'] for gen in actions['generators'].values())
-        stor_power = sum(stor['p'] for stor in actions['storages'].values())
-        renew_power = actions.get('renewable_total', 0)
-
-        # 添加新行到表格数据
-        table_data.append(
-            [now_step, f"{total_load:.2f}", f"{gen_power:.2f}", f"{stor_power:.2f}", f"{renew_power:.2f}"])
-
-        # 更新控制台表格显示
-        print("\033c", end="")  # 清除控制台
-        print("\n" + "=" * 80)
-        print("电力恢复过程关键指标实时监控")
-        print("=" * 80)
-        print(tabulate(table_data, headers=headers, tablefmt="grid", numalign="right"))
-
-    print("\n优化完成!")
-
-    print_optimization_summary(history)
-    # 保存历史数据
-    print(f"保存历史数据到: {HISTORY_FILE}")
-    with open(HISTORY_FILE, 'wb') as f:
-        pickle.dump(history, f)
-    # 保存基础功率数据
-    base_powers = {name: env.base_load[i, 0] for i, name in enumerate(env.load_name)}
-    with open('base_powers.pkl', 'wb') as f:
-        pickle.dump(base_powers, f)
+        results = solve_load_restoration(env, grid, model, now_window)
+    #
+    #     # 提取并应用第一个时间步的控制决策
+    #     actions = get_first_step_actions(model)
+    #     history.append(actions)
+    #     print(actions)
+    #
+    #     # 应用控制动作到环境，获取真实的mt出力和燃料剩余
+    #     apply_actions_to_environment(env, actions)
+    #
+    #     # 更新状态变量SOC
+    #     update_state_variables(env, actions)
+    #
+    #     # 从actions中提取关键数据
+    #     total_load = sum(load['p'] for load in actions['loads'].values())
+    #     gen_power = sum(gen['p'] for gen in actions['generators'].values())
+    #     stor_power = sum(stor['p'] for stor in actions['storages'].values())
+    #     renew_power = actions.get('renewable_total', 0)
+    #
+    #     # 添加新行到表格数据
+    #     table_data.append(
+    #         [now_step, f"{total_load:.2f}", f"{gen_power:.2f}", f"{stor_power:.2f}", f"{renew_power:.2f}"])
+    #
+    #     # 更新控制台表格显示
+    #     print("\033c", end="")  # 清除控制台
+    #     print("\n" + "=" * 80)
+    #     print("电力恢复过程关键指标实时监控")
+    #     print("=" * 80)
+    #     print(tabulate(table_data, headers=headers, tablefmt="grid", numalign="right"))
+    #
+    # print("\n优化完成!")
+    #
+    # print_optimization_summary(history)
+    # # 保存历史数据
+    # print(f"保存历史数据到: {HISTORY_FILE}")
+    # with open(HISTORY_FILE, 'wb') as f:
+    #     pickle.dump(history, f)
+    # # 保存基础功率数据
+    # base_powers = {name: env.base_load[i, 0] for i, name in enumerate(env.load_name)}
+    # with open('base_powers.pkl', 'wb') as f:
+    #     pickle.dump(base_powers, f)
 
 
 if __name__ == "__main__":

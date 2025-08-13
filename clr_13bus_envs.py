@@ -46,7 +46,7 @@ class LoadRestoration13BusBaseEnv:
                           '692', '675a', '675b', '675c', '611', '652',
                           '670a', '670b', '670c']
         self.PV_bus = ['680']
-        self.Wind_bus = ['675']
+        self.Wind_bus = ['675a']
 
         # 读取可再生能源数据CSV文件并正确处理时间索引
         self.renewable_data = pd.read_csv(
