@@ -53,10 +53,10 @@ def st_constraints(model):
     def soc_update_rule(model, b, t):
         """SOC更新约束（简化为理想情况）"""
         if t == model.T.first():
-            return model.soc[b, t] == model.current_soc[b] - model.p_st[b, t] * STEP_INTERVAL_IN_HOUR *0.95
+            return model.soc[b, t] == model.current_soc[b] - model.p_st[b, t] * STEP_INTERVAL_IN_HOUR
         else:
             t_prev = model.T.prev(t)
-            return model.soc[b, t] == model.soc[b, t_prev] - model.p_st[b, t] * STEP_INTERVAL_IN_HOUR *0.95
+            return model.soc[b, t] == model.soc[b, t_prev] - model.p_st[b, t] * STEP_INTERVAL_IN_HOUR#note:0.95
     model.soc_update_con = Constraint(model.st, model.T, rule=soc_update_rule)
 
     return model

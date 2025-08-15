@@ -18,7 +18,7 @@ class MicroTurbine(object):
         """初始化微型燃气轮机"""
         self.mt_bus = ['650']
         self.remaining_fuel_in_kwh = None  # 剩余燃料量（千瓦时）
-        self.original_fuel_in_kwh = 12000.0  # 初始燃料总量
+        self.original_fuel_in_kwh = 7200.0  # 初始燃料总量
         self.reset()  # 调用reset方法初始化
 
     def reset(self):

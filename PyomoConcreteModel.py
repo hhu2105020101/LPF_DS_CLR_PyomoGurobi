@@ -6,7 +6,7 @@ from Storage_Constraints import st_constraints
 from Generator_Constraints import gen_fuel_constraints
 from Load_Constraints import load_constraints
 from SystemConstraints import system_constraints
-
+from Pv_Wt_Constraints import pv_wt_constraints
 def solve_load_restoration(env, grid, model, now_window):
     now_step = now_window[0]
 
@@ -23,6 +23,11 @@ def solve_load_restoration(env, grid, model, now_window):
     # model.gf.pprint()
     # model.pv.pprint()
     # model.wt.pprint()
+    # 定义节点集合
+    model.buses = Set(initialize=grid.buses)
+    # 定义线路集合
+    model.lines = Set(initialize=list(grid.line_impedance.keys()))
+    model.phases = Set(initialize=['A', 'B', 'C'])  # 三相系统
     # 可再生能源预测出力 (MW)
     _, _, wt_profile_slice, pv_profile_slice = env.obtain_renewable_profile_forecast(now_step)
     # print(wt_profile_slice, pv_profile_slice)
@@ -32,6 +37,9 @@ def solve_load_restoration(env, grid, model, now_window):
         within=Reals,doc="光伏预测出力 (MW)")
     # model.p_wt.pprint()
     # model.p_pv.pprint()
+    model.q_wt = Var(model.T, within=Reals)  # 风机无功功率
+    model.q_pv = Var(model.T, within=Reals)  # 光伏无功功率
+
     # 负荷
     # 最大恢复功率参数（默认等于基本值）
     model.p_load_max = Param(model.L,
@@ -83,11 +91,21 @@ def solve_load_restoration(env, grid, model, now_window):
     model.u_p_st = Var(model.st, model.T, within=NonNegativeReals)
     model.is_charging = Var(model.st, model.T, within=Binary)
     model.is_discharging = Var(model.st, model.T, within=Binary)
+
+    #电压
+    model.v = Var(model.buses, model.phases, model.T, within=NonNegativeReals, bounds=(0.95, 1.05))
 ############################################################################################################
+
+    # 在创建约束前添加
+    print("Buses in model:", list(model.buses))
+    print("Phases in model:", list(model.phases))
+    print("Time periods in model:", list(model.T))
+
     # 4. 添加约束
     model = gen_fuel_constraints(model)
     model = st_constraints(model)
     model = load_constraints(model)
+    model = pv_wt_constraints(model)
     model = system_constraints(env, grid, model, now_window)#note
 ############################################################################################################
     # 5. 目标函数: 最大化总恢复奖励
