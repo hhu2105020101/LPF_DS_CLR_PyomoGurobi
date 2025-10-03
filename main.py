@@ -85,46 +85,6 @@ def main():
         plot_full_results(model, grid)
         plot_node_voltages(model,grid)
         # plot_line_power_flows(model, grid)
-    #
-    #     # 提取并应用第一个时间步的控制决策
-    #     actions = get_first_step_actions(model)
-    #     history.append(actions)
-    #     print(actions)
-    #
-    #     # 应用控制动作到环境，获取真实的mt出力和燃料剩余
-    #     apply_actions_to_environment(env, actions)
-    #
-    #     # 更新状态变量SOC
-    #     update_state_variables(env, actions)
-    #
-    #     # 从actions中提取关键数据
-    #     total_load = sum(load['p'] for load in actions['loads'].values())
-    #     gen_power = sum(gen['p'] for gen in actions['generators'].values())
-    #     stor_power = sum(stor['p'] for stor in actions['storages'].values())
-    #     renew_power = actions.get('renewable_total', 0)
-    #
-    #     # 添加新行到表格数据
-    #     table_data.append(
-    #         [now_step, f"{total_load:.2f}", f"{gen_power:.2f}", f"{stor_power:.2f}", f"{renew_power:.2f}"])
-    #
-    #     # 更新控制台表格显示
-    #     print("\033c", end="")  # 清除控制台
-    #     print("\n" + "=" * 80)
-    #     print("电力恢复过程关键指标实时监控")
-    #     print("=" * 80)
-    #     print(tabulate(table_data, headers=headers, tablefmt="grid", numalign="right"))
-    #
-    # print("\n优化完成!")
-    #
-    # print_optimization_summary(history)
-    # # 保存历史数据
-    # print(f"保存历史数据到: {HISTORY_FILE}")
-    # with open(HISTORY_FILE, 'wb') as f:
-    #     pickle.dump(history, f)
-    # # 保存基础功率数据
-    # base_powers = {name: env.base_load[i, 0] for i, name in enumerate(env.load_name)}
-    # with open('base_powers.pkl', 'wb') as f:
-    #     pickle.dump(base_powers, f)
 
 
 def print_results(model, grid):
@@ -181,48 +141,6 @@ def print_results(model, grid):
         print(f"\n发电机出力: {sum(value(model.p_gf[g, t]) for g in model.gf):.2f} kW")
         print(f"储能充放电: {sum(value(model.p_st[b, t]) for b in model.st):.2f} kW")
         print(f"可再生能源: {value(model.p_wt[t]) + value(model.p_pv[t]):.2f} kW")
-
-
-# def print_results(model, grid):
-#     print("\n=== 关键变量值 ===")
-#     for t in model.T:
-#         print(f"\n时间步 {t}:")
-#         # 节点注入功率（仅显示三相总和）
-#         for bus in model.buses:
-#             total_inj = sum(value(model.p_inj[bus, phase, t]) for phase in model.phases)
-#             print(f"  节点{bus}注入功率: {total_inj:.2f} kW")
-#
-#         # 三相线路功率输出
-#         for line in model.lines:
-#             # 输出三相线路功率
-#             print(f"线路 {line[0]}→{line[1]}功率:")
-#             print(f"  A相: {value(model.p_flow[line[0], line[1], 'A', t]):.2f} kW")
-#             print(f"  B相: {value(model.p_flow[line[0], line[1], 'B', t]):.2f} kW")
-#             print(f"  C相: {value(model.p_flow[line[0], line[1], 'C', t]):.2f} kW")
-#             # 计算并显示三相总和
-#             total_flow = sum(value(model.p_flow[line[0], line[1], phase, t])
-#                              for phase in model.phases)
-#             print(f"  三相总和: {total_flow:.2f} kW")
-#
-#
-#         print(f"\n时间步 {t}:")
-#         total_recovery = sum(value(model.p_load[name, t]) for name in model.L)
-#         print(f"总恢复负荷: {total_recovery:.2f} kW")
-#
-#         # 输出各负荷节点的恢复情况
-#         print("\n负荷节点恢复情况:")
-#         # 只遍历有负荷的节点
-#         for bus in grid.load_mapping.keys():
-#             # 累加该节点上所有负荷的恢复功率
-#             for load_name in grid.load_mapping[bus]:
-#                 bus_recovery = value(model.p_load[load_name, t])
-#                 print(f"  节点{load_name}: {bus_recovery:.2f} kW")
-#
-#
-#         # 系统总体信息
-#         print(f"\n发电机出力: {sum(value(model.p_gf[g, t]) for g in model.gf):.2f} kW")
-#         print(f"储能充放电: {sum(value(model.p_st[b, t]) for b in model.st):.2f} kW")
-#         print(f"可再生能源: {value(model.p_wt[t]) + value(model.p_pv[t]):.2f} kW")
 
 def plot_full_results(model, grid):
     """2×2布局的完整优化结果可视化"""
@@ -372,82 +290,6 @@ def plot_full_results(model, grid):
     # 保存并显示
     plt.tight_layout()
     plt.savefig('full_optimization_results.png', dpi=300, bbox_inches='tight')
-
-#
-#
-# def plot_line_power_flows(model, grid):
-#     """绘制关键线路功率流随时间变化（改进版）"""
-#     # 设置中文显示
-#     plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'KaiTi']
-#     plt.rcParams['axes.unicode_minus'] = False
-#
-#     # 准备时间轴数据（288个时间步）
-#     time_steps = list(model.T)
-#     hours = np.linspace(0, 24, len(time_steps))  # 假设24小时周期
-#
-#     # 获取所有线路信息
-#     all_lines = list(grid.line_impedance.keys())
-#
-#     # 创建大画布
-#     fig, axs = plt.subplots(len(all_lines), 1, figsize=(18, 4 * len(all_lines)), sharex=True)
-#
-#     # 如果只有一条线路，确保axs是列表
-#     if len(all_lines) == 1:
-#         axs = [axs]
-#
-#     # 设置颜色方案
-#     phase_colors = {'A': 'red', 'B': 'green', 'C': 'blue'}
-#
-#     # 遍历每条线路
-#     for i, (start_bus, end_bus) in enumerate(all_lines):
-#         ax = axs[i]
-#
-#         # 计算三相功率流
-#         p_flow_A = [value(model.p_flow[start_bus, end_bus, 'A', t]) for t in model.T]
-#         p_flow_B = [value(model.p_flow[start_bus, end_bus, 'B', t]) for t in model.T]
-#         p_flow_C = [value(model.p_flow[start_bus, end_bus, 'C', t]) for t in model.T]
-#         total_flow = [p_flow_A[j] + p_flow_B[j] + p_flow_C[j] for j in range(len(p_flow_A))]
-#
-#         # 获取线路阻抗信息
-#         impedance = grid.line_impedance.get((start_bus, end_bus), (0, 0))
-#         r, x = impedance
-#         impedance_text = f"R={r:.4f} Ω, X={x:.4f} Ω"
-#
-#         # 绘制三相功率流
-#         ax.plot(hours, p_flow_A, '-', color=phase_colors['A'], label='A相', linewidth=1.5,alpha=0.7)
-#         ax.plot(hours, p_flow_B, '--', color=phase_colors['B'], label='B相', linewidth=1.5,alpha=0.7)
-#         ax.plot(hours, p_flow_C, '-.', color=phase_colors['C'], label='C相', linewidth=1.5,alpha=0.7)
-#         # 在绘制线条后添加
-#         ax.fill_between(hours, p_flow_A, 0, color=phase_colors['A'], alpha=0.15)
-#         ax.fill_between(hours, p_flow_B, 0, color=phase_colors['B'], alpha=0.15)
-#         ax.fill_between(hours, p_flow_C, 0, color=phase_colors['C'], alpha=0.15)
-#         # 绘制总功率流（粗虚线）
-#         ax.plot(hours, total_flow, 'k--', label='总功率', linewidth=2.5)
-#
-#         # 设置标题和网格
-#         ax.set_title(f'线路 {start_bus}→{end_bus} 功率流 ({impedance_text})', fontsize=14)
-#         ax.set_ylabel('功率 (kW)', fontsize=10)
-#         ax.grid(True, linestyle='--', alpha=0.5)
-#
-#         # 添加图例
-#         ax.legend(loc='upper right', fontsize=9)
-#
-#         # 添加零线参考
-#         ax.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
-#
-#     # 设置公共x轴
-#     axs[-1].set_xlabel('时间 (小时)', fontsize=12)
-#     plt.xticks(np.arange(0, 25, 3), fontsize=10)
-#
-#     # 添加大标题
-#     plt.suptitle('系统线路功率流分析', fontsize=18, y=0.98)
-#
-#     # 调整布局
-#     plt.tight_layout()
-#     plt.subplots_adjust(top=0.95)  # 为suptitle留空间
-#
-#     # 保存并显示
-#     plt.savefig('line_power_flows.png', dpi=300, bbox_inches='tight')
 
 
 def plot_node_voltages(model, grid):
